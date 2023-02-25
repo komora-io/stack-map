@@ -1,5 +1,7 @@
-use std::borrow::Borrow;
-use std::mem::MaybeUninit;
+#![no_std]
+
+use core::borrow::Borrow;
+use core::mem::MaybeUninit;
 
 /// `StackMap` is a constant-size, zero-allocation associative container
 /// backed by an array. It can be used as a building block for various interesting
@@ -15,7 +17,7 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> Drop for StackMap<K, V, FANO
         for i in 0..self.len() {
             let ptr = self.inner[i].as_mut_ptr();
             unsafe {
-                std::ptr::drop_in_place(ptr);
+                core::ptr::drop_in_place(ptr);
             }
         }
     }
@@ -82,7 +84,7 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
         match self.binary_search(&key) {
             Ok(index) => {
                 let slot = unsafe { &mut self.inner.get_unchecked_mut(index).assume_init_mut().1 };
-                Some(std::mem::replace(slot, value))
+                Some(core::mem::replace(slot, value))
             }
             Err(index) => {
                 assert!(self.len() < FANOUT);
@@ -92,7 +94,7 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
                         let src = self.inner.get_unchecked(index).as_ptr();
                         let dst = self.inner.get_unchecked_mut(index + 1).as_mut_ptr();
 
-                        std::ptr::copy(src, dst, self.len() - index);
+                        core::ptr::copy(src, dst, self.len() - index);
                     }
 
                     self.len += 1;
@@ -111,13 +113,13 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
     {
         if let Ok(index) = self.binary_search(key) {
             unsafe {
-                let ret = std::ptr::read(self.inner.get_unchecked(index).as_ptr()).1;
+                let ret = core::ptr::read(self.inner.get_unchecked(index).as_ptr()).1;
 
                 if index + 1 < self.len() {
                     let src = self.inner.get_unchecked(index + 1).as_ptr();
                     let dst = self.inner.get_unchecked_mut(index).as_mut_ptr();
 
-                    std::ptr::copy(src, dst, self.len() - index);
+                    core::ptr::copy(src, dst, self.len() - index);
                 }
 
                 self.len -= 1;
@@ -156,7 +158,7 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
             let src = self.inner[i].as_ptr();
             let dst = rhs.inner[i - split_idx].as_mut_ptr();
             unsafe {
-                std::ptr::copy_nonoverlapping(src, dst, 1);
+                core::ptr::copy_nonoverlapping(src, dst, 1);
             }
         }
 
