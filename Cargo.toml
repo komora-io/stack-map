@@ -1,0 +1,9 @@
+[package]
+name = "stack-map"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tyler Neely <tylerneely@gmail.com>"]
+description = "constant-size associative container for building higher-level data structures out of"
+license = "GPL-3.0"
+repository = "https://github.com/komora-io/stack-map"
+documentation = "https://docs.rs/stack-map/"
