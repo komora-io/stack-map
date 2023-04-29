@@ -204,4 +204,8 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
     pub const fn len(&self) -> usize {
         self.len
     }
+
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
 }
