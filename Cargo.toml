@@ -1,6 +1,6 @@
 [package]
 name = "stack-map"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Tyler Neely <tylerneely@gmail.com>"]
 description = "constant-size associative container for building higher-level data structures out of"

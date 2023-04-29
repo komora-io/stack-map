@@ -182,6 +182,34 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
     /// key is suffixed by a version or an internal b-tree
     /// index lookup where you are looking for the next
     /// node based on a node's low key.
+    ///
+    /// # Examples
+    /// ```
+    /// let mut map = stack_map::StackMap::<u8, u8, 64>::default();
+    /// map.insert(1, 1);
+    /// map.insert(2, 2);
+    /// map.insert(3, 3);
+    ///
+    /// let lt = map.get_less_than_or_equal(&4).unwrap();
+    /// let expected = &(3, 3);
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than_or_equal(&3).unwrap();
+    /// let expected = &(3, 3);
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than_or_equal(&2).unwrap();
+    /// let expected = &(2, 2);
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than_or_equal(&1).unwrap();
+    /// let expected = &(1, 1);
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than_or_equal(&0);
+    /// let expected = None;
+    /// assert_eq!(expected, lt);
+    /// ```
     pub fn get_less_than_or_equal<Q>(&self, key: &Q) -> Option<&(K, V)>
     where
         K: Borrow<Q>,
@@ -191,6 +219,50 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
         let index = match self.binary_search(key) {
             Ok(i) => i,
             Err(0) => return None,
+            Err(i) => i - 1,
+        };
+
+        self.get_index(index)
+    }
+
+    /// Gets a kv pair that has a key that is less than the provided key.
+    ///
+    /// # Examples
+    /// ```
+    /// let mut map = stack_map::StackMap::<u8, u8, 64>::default();
+    /// map.insert(1, 1);
+    /// map.insert(2, 2);
+    /// map.insert(3, 3);
+    ///
+    /// let lt = map.get_less_than(&4).unwrap();
+    /// let expected = &(3, 3);
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than(&3).unwrap();
+    /// let expected = &(2, 2);
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than(&2).unwrap();
+    /// let expected = &(1, 1);
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than(&1);
+    /// let expected = None;
+    /// assert_eq!(expected, lt);
+    ///
+    /// let lt = map.get_less_than(&0);
+    /// let expected = None;
+    /// assert_eq!(expected, lt);
+    /// ```
+    pub fn get_less_than<Q>(&self, key: &Q) -> Option<&(K, V)>
+    where
+        K: Borrow<Q>,
+        Q: Ord + ?Sized,
+    {
+        // binary search LUB
+        let index = match self.binary_search(key) {
+            Ok(0) | Err(0) => return None,
+            Ok(i) => i - 1,
             Err(i) => i - 1,
         };
 
