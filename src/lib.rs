@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+mod serde;
+
 use std::borrow::Borrow;
 use std::mem::MaybeUninit;
 
@@ -8,6 +11,25 @@ use std::mem::MaybeUninit;
 pub struct StackMap<K: Clone + Ord, V: Clone, const FANOUT: usize> {
     len: usize,
     inner: [MaybeUninit<(K, V)>; FANOUT],
+}
+
+impl<K: Clone + Ord + PartialEq, V: Clone + PartialEq, const FANOUT: usize> PartialEq
+    for StackMap<K, V, FANOUT>
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.len == other.len && {
+            let self_iter = self.iter();
+            let mut other_iter = other.iter();
+
+            for self_kv in self_iter {
+                if !Some(self_kv).eq(&other_iter.next()) {
+                    return false;
+                }
+            }
+
+            other_iter.next().is_none()
+        }
+    }
 }
 
 impl<K: Clone + Ord, V: Clone, const FANOUT: usize> Drop for StackMap<K, V, FANOUT> {
