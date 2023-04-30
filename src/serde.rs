@@ -7,8 +7,8 @@ use crate::StackMap;
 
 impl<K, V, const FANOUT: usize> Serialize for StackMap<K, V, FANOUT>
 where
-    K: 'static + Serialize + Clone + Ord + Send + Sync,
-    V: 'static + Serialize + Clone + Send + Sync,
+    K: Serialize + Ord,
+    V: Serialize,
 {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
     where
@@ -30,8 +30,8 @@ struct StackMapVisitor<K, V, const FANOUT: usize> {
 
 impl<'de, K, V, const FANOUT: usize> Visitor<'de> for StackMapVisitor<K, V, FANOUT>
 where
-    K: 'static + Deserialize<'de> + Clone + Ord + Send + Sync,
-    V: 'static + Deserialize<'de> + Clone + Send + Sync,
+    K: Deserialize<'de> + Ord,
+    V: Deserialize<'de>,
 {
     type Value = StackMap<K, V, FANOUT>;
 
@@ -63,8 +63,8 @@ where
 
 impl<'de, K, V, const FANOUT: usize> Deserialize<'de> for StackMap<K, V, FANOUT>
 where
-    K: 'static + Deserialize<'de> + Clone + Ord + Send + Sync,
-    V: 'static + Deserialize<'de> + Clone + Send + Sync,
+    K: Deserialize<'de> + Ord,
+    V: Deserialize<'de>,
 {
     fn deserialize<D>(d: D) -> Result<StackMap<K, V, FANOUT>, D::Error>
     where

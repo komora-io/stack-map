@@ -8,14 +8,12 @@ use std::mem::MaybeUninit;
 /// backed by an array. It can be used as a building block for various interesting
 /// higher-level data structures.
 #[derive(Debug)]
-pub struct StackMap<K: Clone + Ord, V: Clone, const FANOUT: usize> {
+pub struct StackMap<K: Ord, V, const FANOUT: usize> {
     len: usize,
     inner: [MaybeUninit<(K, V)>; FANOUT],
 }
 
-impl<K: Clone + Ord + PartialEq, V: Clone + PartialEq, const FANOUT: usize> PartialEq
-    for StackMap<K, V, FANOUT>
-{
+impl<K: Ord + PartialEq, V: PartialEq, const FANOUT: usize> PartialEq for StackMap<K, V, FANOUT> {
     fn eq(&self, other: &Self) -> bool {
         self.len == other.len && {
             let self_iter = self.iter();
@@ -32,7 +30,7 @@ impl<K: Clone + Ord + PartialEq, V: Clone + PartialEq, const FANOUT: usize> Part
     }
 }
 
-impl<K: Clone + Ord, V: Clone, const FANOUT: usize> Drop for StackMap<K, V, FANOUT> {
+impl<K: Ord, V, const FANOUT: usize> Drop for StackMap<K, V, FANOUT> {
     fn drop(&mut self) {
         for i in 0..self.len() {
             let ptr = self.inner[i].as_mut_ptr();
@@ -59,7 +57,7 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> Clone for StackMap<K, V, FAN
     }
 }
 
-impl<K: Clone + Ord, V: Clone, const FANOUT: usize> Default for StackMap<K, V, FANOUT> {
+impl<K: Ord, V, const FANOUT: usize> Default for StackMap<K, V, FANOUT> {
     fn default() -> Self {
         StackMap {
             inner: core::array::from_fn(|_i| MaybeUninit::uninit()),
@@ -68,7 +66,7 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> Default for StackMap<K, V, F
     }
 }
 
-impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
+impl<K: Ord, V, const FANOUT: usize> StackMap<K, V, FANOUT> {
     fn binary_search<Q>(&self, key: &Q) -> Result<usize, usize>
     where
         K: Borrow<Q>,
@@ -163,14 +161,11 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
 
     /// Splits this `StackMap` into two. `self` will retain
     /// all key-value pairs before the provided split index.
-    /// Returns the split key at the given split index and
-    /// a new `StackMap` created out of all key-value pairs
+    /// Returns a new `StackMap` created out of all key-value pairs
     /// at or after the provided split index.
-    pub fn split_off(&mut self, split_idx: usize) -> (K, Self) {
+    pub fn split_off(&mut self, split_idx: usize) -> Self {
         assert!(split_idx < self.len());
         assert!(split_idx < FANOUT);
-
-        let split_key = unsafe { self.inner[split_idx].assume_init_ref().0.clone() };
 
         let mut rhs = Self::default();
 
@@ -185,7 +180,7 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
         rhs.len = self.len - split_idx;
         self.len = split_idx;
 
-        (split_key, rhs)
+        rhs
     }
 
     /// Get a key-value pair based on its internal relative
@@ -291,6 +286,58 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> StackMap<K, V, FANOUT> {
         self.get_index(index)
     }
 
+    /// Returns the first kv pair in the StackMap, if any exists
+    ///
+    /// # Examples
+    /// ```
+    /// let mut sm = stack_map::StackMap::<u8, u8, 3>::default();
+    /// sm.insert(1, 1);
+    /// sm.insert(2, 2);
+    /// sm.insert(3, 3);
+    ///
+    /// let expected = Some(&(1, 1));
+    /// let actual = sm.first();
+    /// assert_eq!(expected, actual);
+    /// ```
+    pub fn first(&self) -> Option<&(K, V)> {
+        self.get_index(0)
+    }
+
+    /// Returns the last kv pair in the StackMap, if any exists
+    ///
+    /// # Examples
+    /// ```
+    /// let mut sm = stack_map::StackMap::<u8, u8, 3>::default();
+    /// sm.insert(1, 1);
+    /// sm.insert(2, 2);
+    /// sm.insert(3, 3);
+    ///
+    /// let expected = Some(&(3, 3));
+    /// let actual = sm.last();
+    /// assert_eq!(expected, actual);
+    /// ```
+    pub fn last(&self) -> Option<&(K, V)> {
+        if self.is_empty() {
+            None
+        } else {
+            self.get_index(self.len - 1)
+        }
+    }
+
+    /// Returns `true` if this `StackMap` is at its maximum capacity and
+    /// unable to receive additional data.
+    ///
+    /// # Examples
+    /// ```
+    /// let mut sm = stack_map::StackMap::<u8, u8, 3>::default();
+    /// sm.insert(1, 1);
+    /// sm.insert(2, 2);
+    /// sm.insert(3, 3);
+    ///
+    /// let expected = true;
+    /// let actual = sm.is_full();
+    /// assert_eq!(expected, actual);
+    /// ```
     pub const fn is_full(&self) -> bool {
         self.len == FANOUT
     }
