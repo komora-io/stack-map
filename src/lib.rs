@@ -58,15 +58,20 @@ impl<K: Clone + Ord, V: Clone, const FANOUT: usize> Clone for StackMap<K, V, FAN
 }
 
 impl<K: Ord, V, const FANOUT: usize> Default for StackMap<K, V, FANOUT> {
+    #[inline]
     fn default() -> Self {
-        StackMap {
-            inner: core::array::from_fn(|_i| MaybeUninit::uninit()),
-            len: 0,
-        }
+        StackMap::new()
     }
 }
 
 impl<K: Ord, V, const FANOUT: usize> StackMap<K, V, FANOUT> {
+    pub const fn new() -> Self {
+        Self {
+            inner: unsafe { MaybeUninit::<[MaybeUninit<_>; FANOUT]>::uninit().assume_init() },
+            len: 0,
+        }
+    }
+
     fn binary_search<Q>(&self, key: &Q) -> Result<usize, usize>
     where
         K: Borrow<Q>,
