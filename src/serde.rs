@@ -36,7 +36,7 @@ where
     type Value = StackMap<K, V, FANOUT>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a StackMap<IVec, IVec, 1024>")
+        formatter.write_str("a StackMap<K, V, FANOUT>")
     }
 
     fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
