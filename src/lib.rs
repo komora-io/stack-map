@@ -2,15 +2,26 @@
 mod serde;
 
 use std::borrow::Borrow;
+use std::fmt;
 use std::mem::MaybeUninit;
 
 /// `StackMap` is a constant-size, zero-allocation associative container
 /// backed by an array. It can be used as a building block for various interesting
 /// higher-level data structures.
-#[derive(Debug)]
 pub struct StackMap<K: Ord, V, const FANOUT: usize> {
     len: usize,
     inner: [MaybeUninit<(K, V)>; FANOUT],
+}
+
+impl<K: Ord + fmt::Debug, V: fmt::Debug, const FANOUT: usize> fmt::Debug
+    for StackMap<K, V, FANOUT>
+{
+    fn fmt(&self, w: &mut fmt::Formatter<'_>) -> fmt::Result {
+        w.debug_struct(&format!("StackMap<{}>", FANOUT)).finish()?;
+        w.debug_map()
+            .entries(self.iter().map(|&(ref k, ref v)| (k, v)))
+            .finish()
+    }
 }
 
 impl<K: Ord + PartialEq, V: PartialEq, const FANOUT: usize> PartialEq for StackMap<K, V, FANOUT> {
